@@ -29,3 +29,17 @@ export const getMonster = async (index) => {
 
     return await response.json();
 };
+
+// Gets a random two-part pun (setup + punchline) from JokeAPI
+// safe-mode makes sure there are no rude jokes
+export const getJoke = async () => {
+    const response = await fetch('https://v2.jokeapi.dev/joke/Pun?safe-mode&type=twopart');
+    const data = await response.json();
+
+    // JokeAPI sends error: true when something went wrong
+    if (!response.ok || data.error) {
+        throw new Error('Could not get a joke from JokeAPI');
+    }
+
+    return data;
+};

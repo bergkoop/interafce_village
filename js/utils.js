@@ -8,3 +8,6 @@ export const pickRandom = (list, amount) => {
     const shuffled = [...list].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, amount);
 };
+
+// Waits a number of milliseconds, use it with await: await wait(2000)
+export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
