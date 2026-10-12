@@ -45,3 +45,17 @@ section {
     place-items: center;
     font-size: 4rem;
 }
+
+.quest-status {
+    min-height: 1.5em;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.poster.won {
+    outline: 4px solid #6b8e23;
+}
+
+.poster.lost {
+    outline: 4px solid #8b2e2e;
+}
