@@ -2,7 +2,7 @@
 // These functions only fetch data. If something goes wrong they throw an error,
 // and the file that calls them catches it with try/catch.
 
-const DND_URL = 'https://www.dnd5eapi.co';
+export const DND_URL = 'https://www.dnd5eapi.co';
 
 // Only monsters with these challenge ratings, so no impossible dragons
 const QUEST_LEVELS = '1,2,3,4,5';

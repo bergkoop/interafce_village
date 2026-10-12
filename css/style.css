@@ -17,3 +17,31 @@ header,
 section {
     margin-bottom: 2rem;
 }
+
+/* Quest board: simple layout for now, the tavern look comes in step 6 */
+#quests {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.poster {
+    background-color: #e8d5a9;
+    color: #3b2a1a;
+    padding: 1rem;
+    text-align: center;
+}
+
+.poster img,
+.poster .no-image {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+}
+
+.poster .no-image {
+    display: grid;
+    place-items: center;
+    font-size: 4rem;
+}
