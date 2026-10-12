@@ -1,0 +1,19 @@
+/* Base styling, the real tavern look comes later */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Georgia, serif;
+    background-color: #2b1d14;
+    color: #f3e5c8;
+    padding: 2rem;
+}
+
+header,
+section {
+    margin-bottom: 2rem;
+}
