@@ -34,7 +34,7 @@ const createPoster = (monster) => {
             <h3>${monster.name}</h3>
             <p>${monster.hit_points} HP | CR ${monster.challenge_rating}</p>
             <p class="reward">Reward: ${calculateReward(monster)} gold</p>
-            <button class="accept-button" data-monster="${monster.index}">Accept quest</button>
+            <button class="accept-button wood-button" data-monster="${monster.index}">Accept quest</button>
             <p class="quest-status"></p>
         </article>
     `;

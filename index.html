@@ -4,30 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Rusty Tankard | NeoCity Village</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English&family=Pirata+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
+    <!-- The 3D tavern. JS moves the camera by changing data-view on .camera -->
+    <div class="viewport">
+        <div class="camera" data-view="overview">
+            <div class="ceiling"></div>
+            <div class="floor"></div>
+
+            <!-- Back wall: the quest board -->
+            <div class="wall back">
+                <div class="spot board" data-go="board">
+                    <div class="board-header">
+                        <h2>Quests</h2>
+                        <button id="new-quests" class="wood-button">New quests</button>
+                    </div>
+                    <!-- The wanted posters get added here with JS -->
+                    <div id="quests" class="quests"></div>
+                    <span class="spot-label">Quest Board</span>
+                </div>
+            </div>
+
+            <!-- Left wall: the fireplace, where the music plays -->
+            <div class="wall left">
+                <div class="spot fireplace" data-go="fireplace">
+                    <div class="fire"></div>
+                    <span class="spot-label">Sit by the fire</span>
+                </div>
+            </div>
+
+            <!-- Right wall: the bard on his stage -->
+            <div class="wall right">
+                <div class="spot stage" data-go="bard">
+                    <div class="bard"></div>
+                    <div class="speech-bubble">
+                        <p id="bard-setup">The bard is tuning his lute...</p>
+                        <p id="bard-punchline"></p>
+                    </div>
+                    <div class="floorboards">
+                        <button id="bard-button" class="wood-button">Ask for a joke</button>
+                    </div>
+                    <span class="spot-label">The Bard</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Everything below is flat on the screen, on top of the 3D room -->
+    <header class="top-bar">
         <h1>The Rusty Tankard</h1>
-        <p>Gold: <span id="gold">0</span></p>
+        <p class="gold">Gold: <span id="gold">0</span></p>
     </header>
 
-    <main>
-        <!-- Quest Board: the wanted posters get added here with JS -->
-        <section id="quest-board">
-            <h2>Quest Board</h2>
-            <button id="new-quests">New quests</button>
-            <div id="quests"></div>
-        </section>
+    <p id="caption" class="caption"></p>
 
-        <!-- The Bard: his jokes get added here with JS -->
-        <section id="bard">
-            <h2>The Bard</h2>
-            <p id="bard-setup">The bard is tuning his lute...</p>
-            <p id="bard-punchline"></p>
-            <button id="bard-button">Ask for a joke</button>
-        </section>
-    </main>
+    <div id="music-bar" class="music-bar" hidden>
+        <p>Now playing: <span id="station-name"></span></p>
+        <button id="next-station" class="wood-button">Next</button>
+        <button id="music-toggle" class="wood-button">Mute</button>
+    </div>
+
+    <nav class="nav">
+        <button data-go="overview" class="active">Room</button>
+        <button data-go="fireplace">Fire</button>
+        <button data-go="board">Quests</button>
+        <button data-go="bard">Bard</button>
+    </nav>
 
     <!-- type="module" is needed, otherwise import/export won't work -->
     <script type="module" src="js/main.js"></script>

@@ -1,4 +1,28 @@
-/* Base styling, the real tavern look comes later */
+/* ==========================================================
+   The Rusty Tankard
+   All sizes inside the 3D room use vmin, so the room scales with the screen.
+   ========================================================== */
+
+:root {
+    --room-width: 170vmin;
+    --room-height: 100vmin;
+    --room-depth: 170vmin;
+
+    --wood-dark: #2a1a10;
+    --wood: #4a2f1c;
+    --wood-line: #3a2415;
+    --wood-light: #6b4a2b;
+    --parchment: #e8d5a9;
+    --parchment-dark: #d4bc8a;
+    --ink: #3b2a1a;
+    --blood: #7a1f1f;
+    --fire: #ffb347;
+    --won: #6b8e23;
+    --lost: #8b2e2e;
+
+    --font-title: 'Pirata One', Georgia, serif;
+    --font-text: 'IM Fell English', Georgia, serif;
+}
 
 * {
     box-sizing: border-box;
@@ -6,62 +30,563 @@
     padding: 0;
 }
 
+html,
 body {
-    font-family: Georgia, serif;
-    background-color: #2b1d14;
+    height: 100%;
+    overflow: hidden;
+    background-color: #120b07;
+    font-family: var(--font-text);
     color: #f3e5c8;
-    padding: 2rem;
 }
 
-header,
-section {
-    margin-bottom: 2rem;
+/* ---------- Buttons ---------- */
+
+.wood-button {
+    font-family: var(--font-text);
+    font-size: inherit;
+    padding: 0.3em 0.9em;
+    background: linear-gradient(var(--wood-light), var(--wood));
+    color: var(--parchment);
+    border: 0.12em solid var(--wood-dark);
+    border-radius: 0.4em;
+    cursor: pointer;
 }
 
-/* Quest board: simple layout for now, the tavern look comes in step 6 */
-#quests {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
+.wood-button:hover:not(:disabled) {
+    filter: brightness(1.25);
+}
+
+.wood-button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* ==========================================================
+   The 3D room
+   ========================================================== */
+
+.viewport {
+    position: fixed;
+    inset: 0;
+    perspective: 160vmin;
+    overflow: hidden;
+}
+
+/* The camera holds the whole room. Moving around = moving the room. */
+.camera {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-style: preserve-3d;
+    transition: transform 1.4s ease-in-out;
+}
+
+/* Every view uses the same list of transforms, so the browser can animate between them.
+   scale() zooms in like a camera lens, rotateY() turns you, translate3d() moves the room.
+   We zoom instead of walking all the way up to a wall, because walls that end up
+   behind the viewer get drawn wrong in CSS 3D. */
+.camera[data-view="overview"]  { transform: scale(1)    rotateY(0deg)   translate3d(0, 0, 20vmin); }
+.camera[data-view="board"]     { transform: scale(1.5)  rotateY(0deg)   translate3d(0, 2vmin, 40vmin); }
+.camera[data-view="fireplace"] { transform: scale(1.8)  rotateY(-90deg) translate3d(40vmin, -25vmin, 35vmin); }
+.camera[data-view="bard"]      { transform: scale(1.35) rotateY(90deg)  translate3d(-40vmin, -19vmin, 35vmin); }
+
+/* Phones held upright are narrow, so zoom in less */
+@media (orientation: portrait) {
+    .camera[data-view="overview"]  { transform: scale(0.75) rotateY(0deg)   translate3d(0, 0, 20vmin); }
+    .camera[data-view="board"]     { transform: scale(1.5)  rotateY(0deg)   translate3d(0, 2vmin, 40vmin); }
+    .camera[data-view="fireplace"] { transform: scale(1.4)  rotateY(-90deg) translate3d(40vmin, -25vmin, 35vmin); }
+    .camera[data-view="bard"]      { transform: scale(1.4)  rotateY(90deg)  translate3d(-40vmin, -19vmin, 35vmin); }
+}
+
+.wall,
+.floor,
+.ceiling {
+    position: absolute;
+}
+
+.wall {
+    transform-style: preserve-3d; /* the spots on a wall get their own 3D layer */
+    width: var(--room-depth);
+    height: var(--room-height);
+    left: calc(var(--room-depth) / -2);
+    top: calc(var(--room-height) / -2);
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0.5)),
+        repeating-linear-gradient(90deg, var(--wood) 0 7vmin, var(--wood-line) 7vmin 7.4vmin);
+    /* When a wall comes back, wait until you've turned around first */
+    transition: opacity 0.5s 0.8s, visibility 0.5s 0.8s;
+}
+
+/* The wall behind you fades away right away, otherwise it blocks your view */
+.camera[data-view="fireplace"] .wall.right,
+.camera[data-view="bard"] .wall.left {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s, visibility 0.4s;
+}
+
+.wall.back {
+    width: var(--room-width);
+    left: calc(var(--room-width) / -2);
+    transform: translateZ(calc(var(--room-depth) / -2));
+}
+
+.wall.left {
+    transform: translateX(calc(var(--room-width) / -2)) rotateY(90deg);
+}
+
+.wall.right {
+    transform: translateX(calc(var(--room-width) / 2)) rotateY(-90deg);
+}
+
+.floor,
+.ceiling {
+    width: var(--room-width);
+    height: var(--room-depth);
+    left: calc(var(--room-width) / -2);
+    top: calc(var(--room-depth) / -2);
+}
+
+.floor {
+    transform: translateY(calc(var(--room-height) / 2)) rotateX(90deg);
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255, 179, 71, 0.12), rgba(0, 0, 0, 0.6) 70%),
+        repeating-linear-gradient(0deg, #3b2414 0 9vmin, #2a190d 9vmin 9.4vmin);
+}
+
+.ceiling {
+    transform: translateY(calc(var(--room-height) / -2)) rotateX(-90deg);
+    background: repeating-linear-gradient(90deg, #1d120a 0 20vmin, #140c06 20vmin 24vmin);
+}
+
+/* ---------- Clickable spots ---------- */
+
+.spot {
+    position: absolute;
+    transform: translateZ(0.5vmin); /* just in front of the wall, so Chrome draws it correctly */
+    cursor: pointer;
+    transition: filter 0.3s;
+}
+
+.spot:hover {
+    filter: drop-shadow(0 0 2vmin var(--fire));
+}
+
+/* Once you're standing somewhere, the spots stop glowing */
+.camera:not([data-view="overview"]) .spot {
+    filter: none;
+    cursor: default;
+}
+
+/* From far away, a click on a spot only walks you there.
+   The buttons inside only work when you're standing in front of it. */
+.camera:not([data-view="board"]) .board > *,
+.camera:not([data-view="bard"]) .stage > * {
+    pointer-events: none;
+}
+
+.spot-label {
+    position: absolute;
+    left: 50%;
+    top: -7vmin;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 4vmin;
+    padding: 0.5vmin 2vmin;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 1vmin;
+    transition: opacity 0.4s;
+}
+
+/* Labels are only visible in the overview */
+.camera:not([data-view="overview"]) .spot-label {
+    opacity: 0;
+}
+
+/* ==========================================================
+   Quest board (back wall)
+   ========================================================== */
+
+.board {
+    width: 84vmin;
+    height: 58vmin;
+    left: calc(50% - 42vmin);
+    top: calc(50% - 31vmin);
+    padding: 1.2vmin 1.5vmin 1.5vmin;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.06), transparent 60%),
+        var(--wood-light);
+    border: 2vmin solid var(--wood-dark);
+    box-shadow: 0 1vmin 3vmin rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 1vmin;
+}
+
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 2.2vmin;
+}
+
+.board-header h2 {
+    font-family: var(--font-title);
+    font-weight: normal;
+    font-size: 4.5vmin;
+    line-height: 1;
+    color: var(--parchment);
+}
+
+.quests {
+    flex: 1;
+    display: flex;
+    gap: 1.5vmin;
+}
+
+/* Loading text and error text */
+.quests > p {
+    margin: auto;
+    font-size: 3vmin;
+    text-align: center;
 }
 
 .poster {
-    background-color: #e8d5a9;
-    color: #3b2a1a;
-    padding: 1rem;
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5vmin;
+    padding: 2.5vmin 1.2vmin 1.2vmin;
     text-align: center;
+    color: var(--ink);
+    background:
+        radial-gradient(ellipse at center, var(--parchment) 55%, var(--parchment-dark));
+    box-shadow: 0.5vmin 0.8vmin 1.5vmin rgba(0, 0, 0, 0.5);
+}
+
+/* The nail at the top of each poster */
+.poster::before {
+    content: '';
+    position: absolute;
+    top: 0.8vmin;
+    left: 50%;
+    width: 1.4vmin;
+    height: 1.4vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #9a9a9a, #333);
+    transform: translateX(-50%);
+}
+
+/* Every poster hangs a little crooked */
+.poster:nth-child(1) { transform: rotate(-2deg); }
+.poster:nth-child(2) { transform: rotate(1.5deg) translateY(-0.6vmin); }
+.poster:nth-child(3) { transform: rotate(-1deg); }
+
+.poster-title {
+    font-family: var(--font-title);
+    font-size: 3.6vmin;
+    line-height: 1;
+    letter-spacing: 0.3vmin;
+    color: var(--blood);
 }
 
 .poster img,
 .poster .no-image {
     width: 100%;
-    height: 180px;
+    height: 13vmin;
     object-fit: contain;
 }
 
 .poster .no-image {
     display: grid;
     place-items: center;
-    font-size: 4rem;
+    font-family: var(--font-title);
+    font-size: 8vmin;
+}
+
+.poster h3 {
+    font-family: var(--font-title);
+    font-weight: normal;
+    font-size: 2.8vmin;
+    line-height: 1.1;
+}
+
+.poster p {
+    font-size: 1.9vmin;
+}
+
+.poster .reward {
+    font-weight: bold;
+}
+
+.poster .accept-button {
+    margin-top: auto;
+    font-size: 1.9vmin;
 }
 
 .quest-status {
-    min-height: 1.5em;
-    margin-top: 0.5rem;
+    min-height: 4.4vmin;
     font-style: italic;
+    line-height: 1.15;
 }
 
 .poster.won {
-    outline: 4px solid #6b8e23;
+    box-shadow: 0 0 0 0.6vmin var(--won), 0.5vmin 0.8vmin 1.5vmin rgba(0, 0, 0, 0.5);
 }
 
 .poster.lost {
-    outline: 4px solid #8b2e2e;
+    box-shadow: 0 0 0 0.6vmin var(--lost), 0.5vmin 0.8vmin 1.5vmin rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================
+   Fireplace (left wall)
+   ========================================================== */
+
+.fireplace {
+    width: 60vmin;
+    height: 50vmin;
+    left: calc(50% + 5vmin); /* toward the back of the room */
+    bottom: 0;
+    background: repeating-linear-gradient(0deg, #5c5650 0 6vmin, #47423d 6vmin 6.5vmin);
+    border-radius: 30vmin 30vmin 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.fireplace .fire {
+    width: 34vmin;
+    height: 28vmin;
+    border-radius: 17vmin 17vmin 0 0;
+    background: radial-gradient(ellipse at 50% 100%, #fff3b0, var(--fire) 30%, #c0390b 60%, #1a0d05 80%);
+    animation: flicker 0.3s infinite alternate;
+}
+
+@keyframes flicker {
+    from { opacity: 0.85; transform: scaleY(0.97); }
+    to   { opacity: 1;    transform: scaleY(1.03); }
+}
+
+/* ==========================================================
+   The bard's stage (right wall)
+   ========================================================== */
+
+.stage {
+    width: 60vmin;
+    height: 62vmin;
+    left: calc(50% - 65vmin); /* toward the back of the room */
+    bottom: 0;
+    background: repeating-linear-gradient(90deg, var(--blood) 0 5vmin, #5e1515 5vmin 10vmin);
+    border-top: 3vmin solid var(--wood-dark);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.stage .bard {
+    position: relative;
+    width: 13vmin;
+    height: 22vmin;
+    margin-bottom: 8vmin;
+    background-color: #1a110b;
+    border-radius: 6.5vmin 6.5vmin 2vmin 2vmin;
+}
+
+/* The bard's head */
+.stage .bard::before {
+    content: '';
+    position: absolute;
+    width: 9vmin;
+    height: 9vmin;
+    left: 2vmin;
+    top: -10vmin;
+    border-radius: 50%;
+    background-color: #1a110b;
+}
+
+.speech-bubble {
+    position: absolute;
+    z-index: 1;
+    top: 3vmin;
+    left: 4vmin;
+    right: 4vmin;
+    padding: 1.5vmin 2.5vmin;
+    font-size: 2.6vmin;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--ink);
+    background-color: var(--parchment);
+    border-radius: 3vmin;
+}
+
+/* The little tail of the speech bubble, pointing down at the bard */
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -2.4vmin;
+    transform: translateX(-50%);
+    border: 1.5vmin solid transparent;
+    border-top: 2.5vmin solid var(--parchment);
+    border-bottom: 0;
 }
 
 #bard-punchline {
-    min-height: 1.5em;
-    margin: 0.5rem 0 1rem;
     font-weight: bold;
+}
+
+#bard-punchline:not(:empty) {
+    margin-top: 0.8vmin;
+}
+
+.stage .floorboards {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 8vmin;
+    padding-right: 2vmin;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    font-size: 2.2vmin;
+    background-color: var(--wood-dark);
+}
+
+/* ==========================================================
+   Overlay (flat on the screen)
+   ========================================================== */
+
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem 2rem;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), transparent);
+    pointer-events: none;
+}
+
+.top-bar h1 {
+    font-family: var(--font-title);
+    font-weight: normal;
+    font-size: 2.2rem;
+    line-height: 1;
+    color: var(--fire);
+    text-shadow: 0 0 12px rgba(255, 179, 71, 0.6);
+}
+
+.gold {
+    padding: 0.3rem 1rem;
+    font-size: 1.2rem;
+    white-space: nowrap;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--wood-light);
+    border-radius: 2rem;
+}
+
+#gold {
+    color: var(--fire);
+    font-weight: bold;
+}
+
+/* Short message at the top that fades away by itself */
+.caption {
+    position: fixed;
+    left: 50%;
+    top: 4.5rem;
+    transform: translateX(-50%);
+    max-width: 90vw;
+    padding: 0.6rem 1.4rem;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+}
+
+.caption.visible {
+    opacity: 1;
+}
+
+.music-bar {
+    position: fixed;
+    left: 1.5rem;
+    bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    background-color: rgba(0, 0, 0, 0.75);
+    border: 1px solid var(--wood-light);
+    border-radius: 0.5rem;
+}
+
+/* display: flex above would beat the hidden attribute, so hide it again */
+.music-bar[hidden] {
+    display: none;
+}
+
+#station-name {
+    color: var(--fire);
+}
+
+.nav {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.nav button {
+    font-family: var(--font-text);
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--wood-dark);
+    color: inherit;
+    border: 2px solid var(--wood-light);
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.nav button.active {
+    border-color: var(--fire);
+    color: var(--fire);
+}
+
+/* Small screens: music bar goes above the menu instead of next to it */
+@media (max-width: 800px) {
+    .top-bar h1 {
+        font-size: 1.6rem;
+    }
+
+    .music-bar {
+        left: 50%;
+        bottom: 5rem;
+        transform: translateX(-50%);
+        white-space: nowrap;
+    }
+}
+
+/* People who turn off animations in their OS settings get instant jumps */
+@media (prefers-reduced-motion: reduce) {
+    /* !important, because the wall rules above are more specific */
+    .camera,
+    .wall {
+        transition: none !important;
+    }
+
+    .fireplace .fire {
+        animation: none;
+    }
 }

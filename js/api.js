@@ -43,3 +43,35 @@ export const getJoke = async () => {
 
     return data;
 };
+
+// ---------- Radio Browser API (music) ----------
+
+const RADIO_URL = 'https://de1.api.radio-browser.info/json/stations/bytag';
+
+// Stations with these tags don't fit a cozy tavern
+const UNWANTED_TAGS = ['goth', 'metal', 'industrial', 'punk', 'ebm', 'religious'];
+
+// Gets the most popular working radio stations with one tag, e.g. 'medieval'
+const getStationsByTag = async (tag) => {
+    const response = await fetch(`${RADIO_URL}/${tag}?hidebroken=true&order=votes&reverse=true&limit=20`);
+
+    if (!response.ok) {
+        throw new Error(`Could not load ${tag} stations (status ${response.status})`);
+    }
+
+    return await response.json();
+};
+
+// Gets medieval and celtic stations at the same time, and keeps only the ones that fit the tavern
+export const getStations = async () => {
+    const [medieval, celtic] = await Promise.all([
+        getStationsByTag('medieval'),
+        getStationsByTag('celtic'),
+    ]);
+
+    return [...medieval, ...celtic]
+        // https only, otherwise the browser blocks the stream on a https website
+        .filter((station) => station.url_resolved.startsWith('https'))
+        .filter((station) => !UNWANTED_TAGS.some((tag) => station.tags.includes(tag)))
+        .map((station) => ({ name: station.name.trim(), url: station.url_resolved }));
+};
