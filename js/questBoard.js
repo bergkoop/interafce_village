@@ -3,6 +3,7 @@
 import { getMonsterList, getMonster, DND_URL } from './api.js';
 import { pickRandom, rollDice } from './utils.js';
 import { addGold } from './gold.js';
+import { flipCard, addTilt } from './effects.js';
 
 const POSTER_AMOUNT = 3;
 const QUEST_TIME = 3000;      // how long a quest takes, in milliseconds
@@ -20,25 +21,46 @@ let currentMonsters = [];
 // Reward in gold depends on how strong the monster is
 const calculateReward = (monster) => monster.challenge_rating * 100;
 
-// Builds the HTML for one wanted poster
-const createPoster = (monster) => {
+// The front of a poster: the monster and the reward
+const posterFront = (monster) => {
     // Not every monster has a picture in the API
     const image = monster.image
         ? `<img src="${DND_URL}${monster.image}" alt="${monster.name}">`
         : `<div class="no-image">?</div>`;
 
     return `
-        <article class="poster">
-            <p class="poster-title">Wanted</p>
-            ${image}
-            <h3>${monster.name}</h3>
-            <p>${monster.hit_points} HP | CR ${monster.challenge_rating}</p>
-            <p class="reward">Reward: ${calculateReward(monster)} gold</p>
-            <button class="accept-button wood-button" data-monster="${monster.index}">Accept quest</button>
-            <p class="quest-status"></p>
-        </article>
+        <p class="poster-title">Wanted</p>
+        ${image}
+        <h3>${monster.name}</h3>
+        <p>${monster.hit_points} HP | CR ${monster.challenge_rating}</p>
+        <p class="reward">Reward: ${calculateReward(monster)} gold</p>
     `;
 };
+
+// The back of a poster, while your hero is out hunting
+const posterBack = (monster) => `
+    <p class="poster-title">On a quest</p>
+    <div class="dice">20</div>
+    <p>Your hero is hunting the ${monster.name}...</p>
+`;
+
+// The front again after the quest, with a big stamp on it
+const posterResult = (monster, stamp, text) => `
+    ${posterFront(monster)}
+    <p class="quest-status">${text}</p>
+    <span class="stamp">${stamp}</span>
+`;
+
+// Builds the HTML for one wanted poster.
+// .poster hangs crooked on the board, .poster-face is the part that flips.
+const createPoster = (monster) => `
+    <article class="poster">
+        <div class="poster-face">
+            ${posterFront(monster)}
+            <button class="accept-button wood-button" data-monster="${monster.index}">Accept quest</button>
+        </div>
+    </article>
+`;
 
 // Fetches 3 random monsters and puts them on the board
 const loadQuests = async () => {
@@ -57,6 +79,7 @@ const loadQuests = async () => {
         console.log('New quests:', currentMonsters.map((monster) => monster.name));
 
         questsElement.innerHTML = currentMonsters.map(createPoster).join('');
+        questsElement.querySelectorAll('.poster').forEach((poster) => addTilt(poster));
     } catch (error) {
         console.error('Loading quests failed:', error.message);
         questsElement.innerHTML = '<p>The messenger never arrived. Try again later.</p>';
@@ -86,27 +109,35 @@ const goOnQuest = (monster) => {
 // Runs when you click "Accept quest" on a poster
 const startQuest = async (button) => {
     const poster = button.closest('.poster');
-    const status = poster.querySelector('.quest-status');
+    const face = poster.querySelector('.poster-face');
     const monster = currentMonsters.find((m) => m.index === button.dataset.monster);
 
     button.disabled = true;
-    button.textContent = 'On a quest...';
-    status.textContent = `Your hero heads out to hunt the ${monster.name}...`;
     console.log(`Quest started: ${monster.name} (CR ${monster.challenge_rating})`);
+
+    // Flip the poster over: the back shows that your hero is out hunting
+    await flipCard(face, () => {
+        face.innerHTML = posterBack(monster);
+    });
 
     try {
         const result = await goOnQuest(monster);
-        addGold(result.reward);
-        status.textContent = `Victory! Rolled ${result.roll} (needed ${result.needed}). +${result.reward} gold`;
-        poster.classList.add('won');
         console.log(`Quest won: rolled ${result.roll}, needed ${result.needed}`);
-    } catch (failed) {
-        status.textContent = `Your hero fled! Rolled ${failed.roll} (needed ${failed.needed}).`;
-        poster.classList.add('lost');
-        console.log(`Quest lost: rolled ${failed.roll}, needed ${failed.needed}`);
-    }
 
-    button.textContent = 'Quest done';
+        // Flip back to the front, now with a SLAIN stamp. The gold comes in halfway the flip.
+        await flipCard(face, () => {
+            poster.classList.add('won');
+            face.innerHTML = posterResult(monster, 'Slain', `Rolled ${result.roll}, needed ${result.needed}. +${result.reward} gold!`);
+            addGold(result.reward);
+        });
+    } catch (failed) {
+        console.log(`Quest lost: rolled ${failed.roll}, needed ${failed.needed}`);
+
+        await flipCard(face, () => {
+            poster.classList.add('lost');
+            face.innerHTML = posterResult(monster, 'Fled', `Rolled ${failed.roll}, needed ${failed.needed}. Your hero ran away!`);
+        });
+    }
 };
 
 // Starts the quest board
