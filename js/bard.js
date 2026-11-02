@@ -1,17 +1,15 @@
-// bard.js: the bard and his jokes
 
 import { getJoke } from './api.js';
 import { wait } from './utils.js';
 import { pop } from './effects.js';
 
-const PUNCHLINE_DELAY = 2000; // pause before the punchline, in milliseconds
+const PUNCHLINE_DELAY = 2000; 
 
 const setupElement = document.querySelector('#bard-setup');
 const punchlineElement = document.querySelector('#bard-punchline');
 const bardButton = document.querySelector('#bard-button');
 const bubble = document.querySelector('.speech-bubble');
 
-// Fetches a joke and tells it: setup first, punchline a bit later
 const tellJoke = async () => {
     bardButton.disabled = true;
     setupElement.textContent = 'The bard clears his throat...';
@@ -34,7 +32,6 @@ const tellJoke = async () => {
     }
 };
 
-// Starts the bard
 export const initBard = () => {
     bardButton.addEventListener('click', tellJoke);
 };

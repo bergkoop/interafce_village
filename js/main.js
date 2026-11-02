@@ -1,4 +1,3 @@
-// main.js: the starting point, this file loads everything else
 
 import { initCamera } from './camera.js';
 import { initQuestBoard } from './questBoard.js';
@@ -11,5 +10,4 @@ initQuestBoard();
 initBard();
 initMusic();
 
-// updateMusic is passed as a callback: the camera calls it every time you walk somewhere
 initCamera(updateMusic);

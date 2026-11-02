@@ -54,7 +54,6 @@ export const initCamera = (onViewChange) => {
         }
     });
 
-    // Escape brings you back to the overview
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             goTo('overview');

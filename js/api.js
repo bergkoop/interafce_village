@@ -70,7 +70,6 @@ export const getStations = async () => {
     ]);
 
     return [...medieval, ...celtic]
-        // https only, otherwise the browser blocks the stream on a https website
         .filter((station) => station.url_resolved.startsWith('https'))
         .filter((station) => !UNWANTED_TAGS.some((tag) => station.tags.includes(tag)))
         .map((station) => ({ name: station.name.trim(), url: station.url_resolved }));
